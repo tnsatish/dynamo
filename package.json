@@ -1,6 +1,6 @@
 {
-  "name": "dynamo-archive",
-  "version": "0.0.0",
+  "name": "dynamo",
+  "version": "0.1.0",
   "description": "Backup DynamoDB tables to JSON files",
   "scripts": {
     "test": "tape test/archive.test.js | faucet"
@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/yegor256/dynamo-archive.git"
+    "url": "git://github.com/tnsatish/dynamo.git"
   },
   "keywords": [
     "AWS",
@@ -36,10 +36,10 @@
     "import",
     "achive"
   ],
-  "author": "Yegor Bugayenko",
+  "author": "T.N.Satish and Yegor Bugayenko",
   "license": "Apache",
   "bugs": {
-    "url": "https://github.com/yegor256/dynamo-archive/issues"
+    "url": "https://github.com/tnsatish/dynamo/issues"
   },
-  "homepage": "https://github.com/yegor256/dynamo-archive"
+  "homepage": "https://github.com/tnsatish/dynamo"
 }

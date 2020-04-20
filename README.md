@@ -1,7 +1,4 @@
-[![DevOps By Rultor.com](http://www.rultor.com/b/yegor256/dynamo-archive)](http://www.rultor.com/p/yegor256/dynamo-archive)
-
-[![Build Status](https://travis-ci.org/yegor256/dynamo-archive.svg)](https://travis-ci.org/yegor256/dynamo-archive)
-[![NPM version](https://badge.fury.io/js/dynamo-archive.svg)](http://badge.fury.io/js/dynamo-archive)
+This is cloned from [dynamo-archive](https://github.com/yegor256/dynamo-archive) and made other changes on top of that. 
 
 There are two simple Node.js scripts that archive and restore an entire
 [AWS Dynamo DB](http://aws.amazon.com/dynamodb/)
