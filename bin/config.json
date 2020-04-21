@@ -1,0 +1,30 @@
+{
+  "env": {
+    "env1": {
+      "aws_access_key_id": "key",
+      "aws_secret_access_key": "secretkey",
+      "output": "json",
+      "region": "us-west-1"
+    },
+    "env2": {
+      "aws_access_key_id": "key2",
+      "aws_secret_access_key": "secretkey2",
+      "output": "json",
+      "region": "us-west-2"
+    },
+    "env3": {
+      "aws_access_key_id": "key3",
+      "aws_secret_access_key": "secretkey3",
+      "output": "json",
+      "region": "us-west-2"
+    },
+    "env4": {
+      "aws_access_key_id": "key4",
+      "aws_secret_access_key": "secretkey4",
+      "output": "json",
+      "region": "us-west-2"
+    }
+  },
+  "rate": 100,
+  "query": ""
+}
