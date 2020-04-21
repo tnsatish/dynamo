@@ -35,7 +35,7 @@ var srcdynamo = utils.dynamo({
 			key: argv.srckey || config.env[argv.srcenv].aws_access_key_id,
 			secret: argv.srcsecret || config.env[argv.srcenv].aws_secret_access_key,
 			region: argv.srcregion || config.env[argv.srcenv].region,
-			index: argv.index 
+			index: argv.index,
 			rate: argv.rate || config.rate
 		});
 
@@ -91,7 +91,7 @@ function getSourceTable(destParams) {
 	        var srcParams = {
 	            TableName: argv.srctable,
 	            ReturnConsumedCapacity: 'NONE',
-	            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits
+	            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits > 0 ? data.Table.ProvisionedThroughput.ReadCapacityUnits : 10
 	        };
 	        if (argv.index) {
 	            srcParams.IndexName = argv.index
@@ -109,7 +109,7 @@ function search(srcParams, destParams) {
     var msecPerItem = Math.round(1000 / srcParams.Limit / ((argv.rate || 100) / 100));
     var method = srcParams.KeyConditions ? srcdynamo.query : srcdynamo.scan;
     var read = function(start, done, srcParams, destParams) {
-	process.stdout.write("Start: " + start + ", Done: " + Done + "\n");
+	process.stdout.write("Start: " + new Date(start) + ", Done: " + done + "\n");
         method.call(
             srcdynamo,
             srcParams,
@@ -140,8 +140,9 @@ function search(srcParams, destParams) {
 	                    sleep(expected - Date.now());
         	        }
 
-                    process.stdout.write(JSON.stringify(data.Items[idx]));
-                    process.stdout.write("\n");
+			// TODO: Add debug statements for this
+                    //process.stdout.write(JSON.stringify(data.Items[idx]));
+                    //process.stdout.write("\n");
                 }
                 var srcexpected = start + srcParams.msecPerItem * done;
                 if (srcexpected > Date.now()) {
