@@ -16,30 +16,35 @@
 
 var utils = require('../lib/utils');
 var sleep = require('system-sleep');
+const fs = require('fs');
+
+var configData = fs.readFileSync('config.json');
+var config = JSON.parse(configData);
 
 var argv = utils.config({
     demand: ['srctable', 'desttable'],
-    optional: ['rate', 'query', 'srckey', 'srcsecret', 'srcregion', 'index', 'destkey', 'destsecret', 'destregion'],
+    optional: ['rate', 'query', 'srckey', 'srcsecret', 'srcregion', 'index', 'destkey', 'destsecret', 'destregion', 'srcenv', 'destenv'],
     usage: 'Copy Dynamo DB tables from one AWS account to another AWS account\n' +
-           'Usage: dynamo-copy --srctable src-table --desttable dest-table  [--rate 100] [--query "{}"] [--srcregion us-east-1] [--srckey AK...AA] [--srcsecret 7a...IG] [--index index-name] [--destregion us-east-1] [--destkey AK...AA] [--destsecret 7a...IG]'
+           'Usage: dynamo-copy --srctable src-table --desttable dest-table  [--rate 100] [--query "{}"] [--srcregion us-east-1] [--srckey AK...AA] [--srcsecret 7a...IG] [--index index-name] [--destregion us-east-1] [--destkey AK...AA] [--destsecret 7a...IG] \n\n' + 
+           'Usage: dynamo-copy --srctable src-table --desttable dest-table [--srcenv sourcenv] [--destenv destenv] \n\n'
 });
 
 var srcdynamo = utils.dynamo({
 			table: argv.srctable,
-			query: argv.query,
-			key: argv.srckey,
-			secret: argv.srcsecret,
-			region: argv.srcregion,
-			index: argv.index,
-			rate: argv.rate
+			query: argv.query || config.query,
+			key: argv.srckey || config.env[argv.srcenv].aws_access_key_id,
+			secret: argv.srcsecret || config.env[argv.srcenv].aws_secret_access_key,
+			region: argv.srcregion || config.env[argv.srcenv].region,
+			index: argv.index 
+			rate: argv.rate || config.rate
 		});
 
 var destdynamo = utils.dynamo({
 			table: argv.desttable,
-			key: argv.destkey,
-			secret: argv.destsecret,
-			region: argv.destregion,
-			rate: argv.rate
+			key: argv.destkey || config.env[argv.destenv].aws_access_key_id,
+			secret: argv.destsecret || config.env[argv.destenv].aws_secret_access_key,
+			region: argv.destregion|| config.env[argv.destenv].region,
+			rate: argv.rate || config.rate
 		});
 
 var destQuota = 0;
@@ -56,7 +61,7 @@ destdynamo.describeTable(
             throw err;
         }
         if (data == null) {
-            throw 'Table ' + argv.table + ' not found in DynamoDB';
+            throw 'Table ' + argv.desttable + ' not found in DynamoDB';
         }
         destQuota = data.Table.ProvisionedThroughput.WriteCapacityUnits;
         destStart = Date.now();
