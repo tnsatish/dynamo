@@ -18,16 +18,22 @@ var utils = require('../lib/utils');
 var sleep = require('system-sleep');
 const fs = require('fs');
 
+var argv = utils.config({
+    demand: ['srctable', 'desttable'],
+    optional: ['rate', 'query', 'srckey', 'srcsecret', 'srcregion', 'index', 'destkey', 'destsecret', 'destregion', 'srcenv', 'destenv', 'debug'],
+    usage: 'Copy Dynamo DB tables from one AWS account to another AWS account\n' +
+           'Usage: dynamo-copy --srctable src-table --desttable dest-table [--srcenv sourcenv] [--destenv destenv] [--debug level]\n\n' + 
+	   'debug level 1-99, 1 - quiet mode, 99 - verbose log\n'
+});
+
 var configData = fs.readFileSync('config.json');
 var config = JSON.parse(configData);
 
-var argv = utils.config({
-    demand: ['srctable', 'desttable'],
-    optional: ['rate', 'query', 'srckey', 'srcsecret', 'srcregion', 'index', 'destkey', 'destsecret', 'destregion', 'srcenv', 'destenv'],
-    usage: 'Copy Dynamo DB tables from one AWS account to another AWS account\n' +
-           'Usage: dynamo-copy --srctable src-table --desttable dest-table  [--rate 100] [--query "{}"] [--srcregion us-east-1] [--srckey AK...AA] [--srcsecret 7a...IG] [--index index-name] [--destregion us-east-1] [--destkey AK...AA] [--destsecret 7a...IG] \n\n' + 
-           'Usage: dynamo-copy --srctable src-table --desttable dest-table [--srcenv sourcenv] [--destenv destenv] \n\n'
-});
+var rate = argv.rate || config.rate || 100;
+rate = rate > 0 ? rate : 1;
+var debug = argv.debug || 20;
+var quota = config.quota || 100;
+utils.setLogLevel(debug);
 
 var srcdynamo = utils.dynamo({
 			table: argv.srctable,
@@ -36,7 +42,7 @@ var srcdynamo = utils.dynamo({
 			secret: argv.srcsecret || config.env[argv.srcenv].aws_secret_access_key,
 			region: argv.srcregion || config.env[argv.srcenv].region,
 			index: argv.index,
-			rate: argv.rate || config.rate
+			rate: rate
 		});
 
 var destdynamo = utils.dynamo({
@@ -44,7 +50,7 @@ var destdynamo = utils.dynamo({
 			key: argv.destkey || config.env[argv.destenv].aws_access_key_id,
 			secret: argv.destsecret || config.env[argv.destenv].aws_secret_access_key,
 			region: argv.destregion|| config.env[argv.destenv].region,
-			rate: argv.rate || config.rate
+			rate: rate
 		});
 
 var destQuota = 0;
@@ -64,13 +70,18 @@ destdynamo.describeTable(
             throw 'Table ' + argv.desttable + ' not found in DynamoDB';
         }
         destQuota = data.Table.ProvisionedThroughput.WriteCapacityUnits;
+	utils.log(10, "Destination table Quota: " + destQuota);
+	destQuota = destQuota == 0 || destQuota > quota ? quota : destQuota;
+	utils.log(10, "Using Quota: " + destQuota);
         destStart = Date.now();
-        destSecPerItem = Math.round(1000 / destQuota / ((argv.rate || 100) / 100));
+        destSecPerItem = 1000 / destQuota;
+	utils.log(10, "Destination table - No.of milliseconds to process one item: " + destSecPerItem);
+	utils.log(10, "No.of items to process per iteration: " + rate);
         destDone = 0;
 
 	var params = {
-		quota: data.Table.ProvisionedThroughput.WriteCapacityUnits,
-		msecPerItem: Math.round(1000 / destQuota / ((argv.rate || 100) / 100))
+		quota: destQuota,
+		msecPerItem: destSecPerItem
 	};
 	getSourceTable(params);
     }
@@ -88,28 +99,36 @@ function getSourceTable(destParams) {
 	        if (data == null) {
 	            throw 'Table ' + argv.srctable + ' not found in DynamoDB';
 	        }
+		var srcQuota = data.Table.ProvisionedThroughput.ReadCapacityUnits;
+		srcQuota = srcQuota == 0 || srcQuota > quota ? quota : srcQuota;
+                var srcSecPerItem = 1000 / srcQuota;
 	        var srcParams = {
 	            TableName: argv.srctable,
 	            ReturnConsumedCapacity: 'NONE',
-	            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits > 0 ? data.Table.ProvisionedThroughput.ReadCapacityUnits : 10
+	            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits > 0 ? data.Table.ProvisionedThroughput.ReadCapacityUnits : rate
 	        };
+		var srcSettings = {
+			quota: srcQuota,
+			msecPerItem: srcSecPerItem
+		}
+		utils.log(10, "Source Table AWS Limit: " + data.Table.ProvisionedThroughput.ReadCapacityUnits);
+		utils.log(10, "Source Table Download Limit: " + srcParams.Limit);
+    		utils.log(10, "Source table items - No.of milliseconds to process one item: " + srcSettings.msecPerItem);
 	        if (argv.index) {
 	            srcParams.IndexName = argv.index
 	        }
-	
 	        if (argv.query) {
 	            srcParams.KeyConditions = JSON.parse(argv.query);
 	        }
-	        search(srcParams, destParams);
+	        search(srcParams, srcSettings, destParams);
 	    }
 	);
 }
 
-function search(srcParams, destParams) {
-    var msecPerItem = Math.round(1000 / srcParams.Limit / ((argv.rate || 100) / 100));
+function search(srcParams, srcSettings, destParams) {
     var method = srcParams.KeyConditions ? srcdynamo.query : srcdynamo.scan;
     var read = function(start, done, srcParams, destParams) {
-	process.stdout.write("Start: " + new Date(start) + ", Done: " + done + "\n");
+    utils.log(20, "Date: " + new Date(Date.now()) + ", Items Copied: " + done + "\n");
         method.call(
             srcdynamo,
             srcParams,
@@ -135,19 +154,21 @@ function search(srcParams, destParams) {
 	                    }
 	                );
 	                ++done;
-        	        var expected = start + destParams.msecPerItem * done;
-                	if (expected > Date.now()) {
-	                    sleep(expected - Date.now());
-        	        }
+			if(destParams.msecPerItem > 0) {
+        	       		var expected = start + destParams.msecPerItem * done;
+               		 	if (expected > Date.now()) {
+		                    sleep(expected - Date.now());
+	        	        }
+			}
+                    	utils.log(80, JSON.stringify(data.Items[idx]) + "\n");
+                }
+		if(srcSettings.msecPerItem > 0) {
+        	        var srcexpected = start + srcSettings.msecPerItem * done;
+                	if (srcexpected > Date.now()) {
+               	     		sleep(srcexpected - Date.now());
+               		}
+		}
 
-			// TODO: Add debug statements for this
-                    //process.stdout.write(JSON.stringify(data.Items[idx]));
-                    //process.stdout.write("\n");
-                }
-                var srcexpected = start + srcParams.msecPerItem * done;
-                if (srcexpected > Date.now()) {
-                    sleep(srcexpected - Date.now());
-                }
                 if (data.LastEvaluatedKey) {
                     srcParams.ExclusiveStartKey = data.LastEvaluatedKey;
                     read(start, done, srcParams, destParams);
