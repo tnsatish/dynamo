@@ -20,9 +20,9 @@ const fs = require('fs');
 
 var argv = utils.config({
     demand: ['srctable', 'desttable'],
-    optional: ['rate', 'query', 'srckey', 'srcsecret', 'srcregion', 'index', 'destkey', 'destsecret', 'destregion', 'srcenv', 'destenv', 'debug'],
+    optional: ['rate', 'query', 'srckey', 'srcsecret', 'srcregion', 'index', 'destkey', 'destsecret', 'destregion', 'srcenv', 'destenv', 'debug', 'lastkey'],
     usage: 'Copy Dynamo DB tables from one AWS account to another AWS account\n' +
-           'Usage: dynamo-copy --srctable src-table --desttable dest-table [--srcenv sourcenv] [--destenv destenv] [--debug level]\n\n' + 
+           'Usage: dynamo-copy --srctable src-table --desttable dest-table [--srcenv sourcenv] [--destenv destenv] [--debug level] [--lastkey LastEvaluatedKey]\n\n' + 
 	   'debug level 1-99, 1 - quiet mode, 99 - verbose log\n'
 });
 
@@ -128,7 +128,7 @@ function getSourceTable(destParams) {
 function search(srcParams, srcSettings, destParams) {
     var method = srcParams.KeyConditions ? srcdynamo.query : srcdynamo.scan;
     var read = function(start, done, srcParams, destParams) {
-    utils.log(20, "Date: " + new Date(Date.now()) + ", Items Copied: " + done + "\n");
+    utils.log(20, "\nDate: " + new Date(Date.now()) + ", Items Copied: " + done);
         method.call(
             srcdynamo,
             srcParams,
@@ -171,11 +171,15 @@ function search(srcParams, srcSettings, destParams) {
 
                 if (data.LastEvaluatedKey) {
                     srcParams.ExclusiveStartKey = data.LastEvaluatedKey;
+		    utils.log(20, "LastEvaluatedKey: " + JSON.stringify(srcParams.ExclusiveStartKey));
                     read(start, done, srcParams, destParams);
                 }
             }
         );
     };
+    if(argv.lastkey || config.lastkey) {
+	    srcParams.ExclusiveStartKey = JSON.parse(argv.lastkey || config.lastkey);
+    }
     read(Date.now(), 0, srcParams, destParams);
 };
 
