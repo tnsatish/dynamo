@@ -92,7 +92,7 @@ dynamo.describeTable(
         var params = {
             TableName: argv.table,
             ReturnConsumedCapacity: 'NONE',
-            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits
+            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits > 0 ? data.Table.ProvisionedThroughput.ReadCapacityUnits : dynamo.rate
         };
         if (argv.index) {
             params.IndexName = argv.index

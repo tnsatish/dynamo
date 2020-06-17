@@ -46,6 +46,7 @@ dynamo.describeTable(
             throw 'Table ' + argv.table + ' not found in DynamoDB';
         }
 	console.log(data);
+	console.log(JSON.stringify(data));
     }
 );
 

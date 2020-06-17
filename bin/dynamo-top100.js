@@ -16,17 +16,30 @@
 
 var utils = require('../lib/utils');
 var sleep = require('system-sleep');
+const fs = require('fs');
 
 var argv = utils.config({
     demand: ['table'],
-    optional: ['rate', 'query', 'key', 'secret', 'region', 'index'],
+    optional: ['rate', 'query', 'key', 'secret', 'region', 'index', 'env'],
     usage: 'Archives Dynamo DB table to standard output in JSON\n' +
-           'Usage: dynamo-archive --table my-table [--rate 100] [--query "{}"] [--region us-east-1] [--key AK...AA] [--secret 7a...IG] [--index index-name]'
+           'Usage: dynamo-archive --table my-table [--rate 100] [--query "{}"] [--region us-east-1] [--key AK...AA] [--secret 7a...IG] [--index index-name]\n' + 
+           'Usage: dynamo-archive --table my-table [--env env] \n\n'
 });
 
-var dynamo = utils.dynamo(argv);
+var configData = fs.readFileSync('config.json');
+var config = JSON.parse(configData);
+
+var dynamo = utils.dynamo({
+			table: argv.table,
+			query: argv.query || config.query,
+			key: argv.key || config.env[argv.env].aws_access_key_id,
+			secret: argv.secret || config.env[argv.env].aws_secret_access_key,
+			region: argv.region || config.env[argv.env].region,
+			index: argv.index,
+			rate: argv.rate || config.rate
+		});
 function search(params) {
-    var msecPerItem = Math.round(1000 / params.Limit / ((argv.rate || 100) / 100));
+    var msecPerItem = Math.round(1000 / params.Limit / ((argv.rate || config.rate || 100) / 100));
     var method = params.KeyConditions ? dynamo.query : dynamo.scan;
     var read = function(start, done, params) {
 	    process.stdout.write("Start: " + start + "\n");
@@ -75,18 +88,18 @@ dynamo.describeTable(
         if (data == null) {
             throw 'Table ' + argv.table + ' not found in DynamoDB';
         }
-	    		    process.stdout.write("Data: " + JSON.stringify(data) + "\n");
+       process.stdout.write("Data: " + JSON.stringify(data) + "\n");
         var params = {
             TableName: argv.table,
             ReturnConsumedCapacity: 'NONE',
-            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits
+            Limit: data.Table.ProvisionedThroughput.ReadCapacityUnits > 0 ? data.Table.ProvisionedThroughput.ReadCapacityUnits : dynamo.rate
         };
         if (argv.index) {
             params.IndexName = argv.index
         }
 
-        if (argv.query) {
-            params.KeyConditions = JSON.parse(argv.query);
+        if (argv.query || config.query) {
+            params.KeyConditions = JSON.parse(argv.query || config.query);
         }
         search(params);
     }
