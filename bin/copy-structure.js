@@ -24,21 +24,25 @@ var argv = utils.config({
     demand: ['srctable', 'desttable'],
     optional: ['srcenv', 'destenv'],
     usage: 'Copy Dynamo DB table structure from one AWS account to another AWS account\n' +
-           'Usage: copy-structure --srctable table --desttable table [--srcenv srcenv] [--destenv destenv]\n\n'
+           'Usage: copy-structure --srctable table --desttable table [--srcenv srcenv] [--destenv destenv]\n\n' +
+           'srcenv and destenv are optional, if they are defined in config.json\n'
 });
+
+var srcenv = argv.srcenv || config.srcenv;
+var destenv = argv.destenv || config.destenv;
 
 var srcdynamo = utils.dynamo({
 			table: argv.srctable,
-			key: config.env[argv.srcenv].aws_access_key_id,
-			secret: config.env[argv.srcenv].aws_secret_access_key,
-			region: config.env[argv.srcenv].region
+			key: config.env[srcenv].aws_access_key_id,
+			secret: config.env[srcenv].aws_secret_access_key,
+			region: config.env[srcenv].region
 		});
 
 var destdynamo = utils.dynamo({
 			table: argv.desttable,
-			key: config.env[argv.destenv].aws_access_key_id,
-			secret: config.env[argv.destenv].aws_secret_access_key,
-			region: config.env[argv.destenv].region
+			key: config.env[destenv].aws_access_key_id,
+			secret: config.env[destenv].aws_secret_access_key,
+			region: config.env[destenv].region
 		});
 
 srcdynamo.describeTable(

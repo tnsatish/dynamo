@@ -26,5 +26,7 @@
     }
   },
   "rate": 100,
-  "query": ""
+  "query": "",
+  "srcenv": "env2",
+  "destenv": "env1"
 }
