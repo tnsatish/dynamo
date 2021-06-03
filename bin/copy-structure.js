@@ -35,14 +35,16 @@ var srcdynamo = utils.dynamo({
 			table: argv.srctable,
 			key: config.env[srcenv].aws_access_key_id,
 			secret: config.env[srcenv].aws_secret_access_key,
-			region: config.env[srcenv].region
+			region: config.env[srcenv].region,
+			endpointUrl: config.env[srcenv].endpointUrl
 		});
 
 var destdynamo = utils.dynamo({
 			table: argv.desttable,
 			key: config.env[destenv].aws_access_key_id,
 			secret: config.env[destenv].aws_secret_access_key,
-			region: config.env[destenv].region
+			region: config.env[destenv].region,
+			endpointUrl: config.env[destenv].endpointUrl
 		});
 
 srcdynamo.describeTable(

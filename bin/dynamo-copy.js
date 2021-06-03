@@ -50,6 +50,7 @@ var destdynamo = utils.dynamo({
 			key: argv.destkey || config.env[argv.destenv].aws_access_key_id,
 			secret: argv.destsecret || config.env[argv.destenv].aws_secret_access_key,
 			region: argv.destregion|| config.env[argv.destenv].region,
+			endpointUrl: config.env[argv.destenv].endpointUrl,
 			rate: rate
 		});
 

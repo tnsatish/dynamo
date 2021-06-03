@@ -22,8 +22,8 @@ var argv = utils.config({
 	demand: ['table'],
 	optional: ['rate', 'query', 'key', 'secret', 'region', 'index', 'env'],
 	usage: 'Gets Top N records from Dynamo DB table to standard output in JSON\n' +
-	'Usage: dynamo-archive --table my-table [--rate 100] [--query "{}"] [--region us-east-1] [--key AK...AA] [--secret 7a...IG] [--index index-name]\n' + 
-	'Usage: dynamo-archive --table my-table [--env env] \n\n' + 
+	'Usage: dynamo-top100 --table my-table [--rate 100] [--query "{}"] [--region us-east-1] [--key AK...AA] [--secret 7a...IG] [--index index-name]\n' + 
+	'Usage: dynamo-top100 --table my-table [--env env] \n\n' + 
 	'Use --rate N to get top N records\n'
 });
 

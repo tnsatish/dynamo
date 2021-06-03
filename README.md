@@ -31,7 +31,11 @@ Where `019644334823` if your AWS account number, `us-east-1` is AWS region,
 and `test` is the name of your Dynamo DB table (can be a `*`, if you grant
 access to all tables).
 
-Run it first without arguments and read the output:
+Run it from bin folder, first without arguments and read the output:
+
+```bash
+$ node describe.js
+```
 
 ```bash
 $ ./bin/dynamo-archive.js
