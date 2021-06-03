@@ -35,22 +35,26 @@ var debug = argv.debug || 20;
 var quota = config.quota || 100;
 utils.setLogLevel(debug);
 
+var srcenv = argv.srcenv || config.srcenv;
+var destenv = argv.destenv || config.destenv;
+
 var srcdynamo = utils.dynamo({
 			table: argv.srctable,
 			query: argv.query || config.query,
-			key: argv.srckey || config.env[argv.srcenv].aws_access_key_id,
-			secret: argv.srcsecret || config.env[argv.srcenv].aws_secret_access_key,
-			region: argv.srcregion || config.env[argv.srcenv].region,
+			key: argv.srckey || config.env[srcenv].aws_access_key_id,
+			secret: argv.srcsecret || config.env[srcenv].aws_secret_access_key,
+			region: argv.srcregion || config.env[srcenv].region,
 			index: argv.index,
+			endpointUrl: config.env[srcenv].endpointUrl,
 			rate: rate
 		});
 
 var destdynamo = utils.dynamo({
 			table: argv.desttable,
-			key: argv.destkey || config.env[argv.destenv].aws_access_key_id,
-			secret: argv.destsecret || config.env[argv.destenv].aws_secret_access_key,
-			region: argv.destregion|| config.env[argv.destenv].region,
-			endpointUrl: config.env[argv.destenv].endpointUrl,
+			key: argv.destkey || config.env[destenv].aws_access_key_id,
+			secret: argv.destsecret || config.env[destenv].aws_secret_access_key,
+			region: argv.destregion|| config.env[destenv].region,
+			endpointUrl: config.env[destenv].endpointUrl,
 			rate: rate
 		});
 
