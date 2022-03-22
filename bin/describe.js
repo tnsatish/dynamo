@@ -31,7 +31,8 @@ var dynamo = utils.dynamo({
 			table: argv.table,
 			key: argv.key || config.env[argv.env].aws_access_key_id,
 			secret: argv.secret || config.env[argv.env].aws_secret_access_key,
-			region: argv.region || config.env[argv.env].region
+			region: argv.region || config.env[argv.env].region,
+			endpointUrl: argv.endpointUrl || config.env[argv.env].endpointUrl
 		});
 
 dynamo.describeTable(

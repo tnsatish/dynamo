@@ -30,13 +30,14 @@ var argv = utils.config({
 var configData = fs.readFileSync('config.json');
 var config = JSON.parse(configData);
 var rate = argv.rate || config.rate || 100;
+var env = argv.env || config.srcenv;
 
 var dynamo = utils.dynamo({
 	table: argv.table,
 	query: argv.query || config.query,
-	key: argv.key || config.env[argv.env].aws_access_key_id,
-	secret: argv.secret || config.env[argv.env].aws_secret_access_key,
-	region: argv.region || config.env[argv.env].region,
+	key: argv.key || config.env[env].aws_access_key_id,
+	secret: argv.secret || config.env[env].aws_secret_access_key,
+	region: argv.region || config.env[env].region,
 	index: argv.index,
 	rate: argv.rate || config.rate
 });
